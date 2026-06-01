@@ -28,20 +28,17 @@ public class CategoryService {
     public CategoryResponse create(CategoryRequest request) {
         validateCategory(request, null);
 
-        // TO-DO: aplicar links HATEOAS
         Category entity = categoryMapper.toModel(request);
         Category saved = categoryRepository.save(entity);
         log.info("Category created with ID: {} and name: {}", saved.getId(), saved.getName());
         return categoryMapper.toResponse(saved);
     }
 
-    // TO-DO: adicionar paginação com suporte para links HATEAOS
     public Page<CategoryResponse> findAll(Pageable pageable) {
         return categoryRepository.findAll(pageable)
                 .map(categoryMapper::toResponse);
     }
 
-    // TO-DO: adicionar paginação com suporte para links HATEAOS
     public Page<CategoryResponse> findByName(String name, Pageable pageable) {
         return categoryRepository.findByName(name, pageable)
                 .map(categoryMapper::toResponse);
