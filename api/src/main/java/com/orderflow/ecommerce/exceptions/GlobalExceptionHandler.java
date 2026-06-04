@@ -1,6 +1,5 @@
 package com.orderflow.ecommerce.exceptions;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import com.orderflow.ecommerce.dtos.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -61,17 +60,4 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(err);
     }
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleIntegrityViolation(DataIntegrityViolationException ex, HttpServletRequest request) {
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-        ErrorResponse err = new ErrorResponse(Instant.now(), status.value(), ex.getMessage(), request.getRequestURI());
-        return ResponseEntity.status(status).body(err);
-    }
-
-    @ExceptionHandler(DuplicateResourceException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateResource(DuplicateResourceException ex, HttpServletRequest request) {
-        HttpStatus status = HttpStatus.UNPROCESSABLE_ENTITY;
-        ErrorResponse err = new ErrorResponse(Instant.now(), status.value(), ex.getMessage(), request.getRequestURI());
-        return ResponseEntity.status(status).body(err);
-    }
 }

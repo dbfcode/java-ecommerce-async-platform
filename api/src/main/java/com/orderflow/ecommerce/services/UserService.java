@@ -1,8 +1,9 @@
 package com.orderflow.ecommerce.services;
 
+import com.orderflow.ecommerce.controllers.exceptions.FieldMessage;
 import com.orderflow.ecommerce.dtos.UserDto;
 import com.orderflow.ecommerce.entities.User;
-import com.orderflow.ecommerce.exceptions.DuplicateResourceException;
+import com.orderflow.ecommerce.exceptions.DuplicateResourceValidationException;
 import com.orderflow.ecommerce.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
@@ -62,22 +65,11 @@ public class UserService {
 
     private User saveEntity(Long id, UserDto dto) {
         User entity = new User();
-
         if(id != null){ // if updating
             entity = repository.getReferenceById(id);
-            if (repository.existsByEmailAndIdNot(dto.email(), id)) {
-                throw new DuplicateResourceException("Email já cadastrado para outro usuário!");
-            }
-            if (repository.existsByTaxIdAndIdNot(dto.taxId(), id)) {
-                throw new DuplicateResourceException("CPF/CNPJ já cadastrado para outro usuário!");
-            }
+            validate(id, dto.email(), dto.taxId(), "Email já cadastrado para outro usuário!", "CPF/CNPJ já cadastrado para outro usuário!");
         } else {
-            if (repository.existsByEmail(dto.email())) {
-                throw new DuplicateResourceException("Email já cadastrado!");
-            }
-            if (repository.existsByTaxId(dto.taxId())) {
-                throw new DuplicateResourceException("CPF/CNPJ já cadastrado!");
-            }
+            validate(null, dto.email(), dto.taxId(), "Email já cadastrado!", "CPF/CNPJ já cadastrado!");
         }
 
         entity.setName(dto.name());
@@ -99,5 +91,33 @@ public class UserService {
         entity.setZipCode(dto.zipCode());
 
         return repository.save(entity);
+    }
+
+    private void validate(Long id, String email, String taxId, String emailMessage, String taxIdMessage) {
+        List<FieldMessage> errors = new ArrayList<>();
+        int ok = 0;
+        if(id != null){
+            if (repository.existsByEmailAndIdNot(email, id)) {
+                ok = 1;
+                errors.add(new FieldMessage("email", "Email já cadastrado para outro usuário!"));
+            }
+            if (repository.existsByTaxIdAndIdNot(taxId, id)) {
+                ok = 1;
+                errors.add(new FieldMessage("taxId", "CPF/CNPJ já cadastrado para outro usuário!"));
+            }
+        } else {
+            if (repository.existsByEmail(email)) {
+                ok = 1;
+                errors.add(new FieldMessage("email", "Email já cadastrado!"));
+            }
+            if (repository.existsByTaxId(taxId)) {
+                ok = 1;
+                errors.add(new FieldMessage("taxId", "CPF/CNPJ já cadastrado!"));
+            }
+        }
+
+        if (ok == 1)
+            throw new DuplicateResourceValidationException(errors, "Duplicated information!");
+
     }
 }

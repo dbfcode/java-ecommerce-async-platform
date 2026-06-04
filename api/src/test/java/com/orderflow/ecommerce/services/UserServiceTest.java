@@ -3,7 +3,7 @@ package com.orderflow.ecommerce.services;
 import com.orderflow.ecommerce.auxiliar.Factory;
 import com.orderflow.ecommerce.dtos.UserDto;
 import com.orderflow.ecommerce.entities.User;
-import com.orderflow.ecommerce.exceptions.DuplicateResourceException;
+import com.orderflow.ecommerce.exceptions.DuplicateResourceValidationException;
 import com.orderflow.ecommerce.repositories.UserRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -138,7 +138,7 @@ public class UserServiceTest {
 
         Mockito.when(repository.existsByEmail(existingUserEmail)).thenReturn(true);
 
-        Assertions.assertThrows(DuplicateResourceException.class, () -> service.insert(userDto));
+        Assertions.assertThrows(DuplicateResourceValidationException.class, () -> service.insert(userDto));
 
         Mockito.verify(repository, times(0)).save(ArgumentMatchers.any());
     }
@@ -147,7 +147,7 @@ public class UserServiceTest {
     void insertShouldThrowDuplicateResourceExceptionWhenTaxIdDuplicate() {
         Mockito.when(repository.existsByTaxId(existingTaxId)).thenReturn(true);
 
-        Assertions.assertThrows(DuplicateResourceException.class, () -> service.insert(userDto));
+        Assertions.assertThrows(DuplicateResourceValidationException.class, () -> service.insert(userDto));
 
         Mockito.verify(repository, times(0)).save(ArgumentMatchers.any());
     }
@@ -175,7 +175,7 @@ public class UserServiceTest {
 
         Mockito.when(repository.existsByEmailAndIdNot("someoneelse@example.com", existingId)).thenReturn(true);
 
-        Assertions.assertThrows(DuplicateResourceException.class, () -> service.update(existingId, dto));
+        Assertions.assertThrows(DuplicateResourceValidationException.class, () -> service.update(existingId, dto));
 
         Mockito.verify(repository, times(0)).save(ArgumentMatchers.any());
     }
@@ -191,7 +191,7 @@ public class UserServiceTest {
         Mockito.when(repository.existsByEmailAndIdNot("bob@gmail.com", existingId)).thenReturn(false);
         Mockito.when(repository.existsByTaxIdAndIdNot("11111111111", existingId)).thenReturn(true);
 
-        Assertions.assertThrows(DuplicateResourceException.class, () -> service.update(existingId, dto));
+        Assertions.assertThrows(DuplicateResourceValidationException.class, () -> service.update(existingId, dto));
 
         Mockito.verify(repository, times(0)).save(ArgumentMatchers.any());
     }
