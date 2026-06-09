@@ -7,9 +7,9 @@ export default function Home() {
   const { products, loading, error } = useProducts();
   const [search, setSearch] = useState("");
 
-  const filtered = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filtered = products.content.filter((p) =>
+  p.name.toLowerCase().includes(search.toLowerCase())
+);
 
   return (
     <div className="p-4">
