@@ -1,55 +1,62 @@
 import { useEffect, useState } from "react";
 
-  type Category = {
-    id: number;
-    name: string;
-  };
+type Category = {
+  id: number;
+  name: string;
+};
 
-  type Product = {
-    id: number;
-    name: string;
-    category?: Category;
-    price: number;
-  };
+type Product = {
+  id: number;
+  name: string;
+  category?: Category;
+  price: number;
+};
 
-  export default function useProducts() {
-    const [products, setProducts] = useState<Product[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+type ProductsResponse = {
+  content: Product[];
+  totalPages: number;
+  totalElements: number;
+};
 
-    useEffect(() => {
-  async function fetchProducts() {
-    try {
-      setLoading(true);
+export default function useProducts() {
+  const [products, setProducts] = useState<ProductsResponse>({
+    content: [],
+    totalPages: 0,
+    totalElements: 0,
+  });
 
-      console.log("Buscando produtos...");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-      const res = await fetch("http://localhost:8080/products");
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        setLoading(true);
 
-      if (!res.ok) throw new Error("Erro ao buscar produtos");
+        const res = await fetch("http://localhost:8080/products");
 
-      const data: Product[] = await res.json();
+        if (!res.ok) {
+          throw new Error("Erro ao buscar produtos");
+        }
 
-      console.log("Produtos recebidos:", data);
+        const data: ProductsResponse = await res.json();
 
-      setProducts(data);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError("Não foi possível carregar os produtos");
-      } else {
-        setError("Erro desconhecido");
+        console.log("Produtos recebidos:", data);
+
+        setProducts(data);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError("Não foi possível carregar os produtos");
+        } else {
+          setError("Erro desconhecido");
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
     }
-  }
 
-  fetchProducts();
-}, []);
+    fetchProducts();
+  }, []);
 
- return {
-    products,
-    loading,
-    error,
-  };
+  return { products, loading, error };
 }
