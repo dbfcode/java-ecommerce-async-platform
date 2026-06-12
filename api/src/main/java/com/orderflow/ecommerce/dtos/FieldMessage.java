@@ -1,4 +1,4 @@
-package com.orderflow.ecommerce.controllers.exceptions;
+package com.orderflow.ecommerce.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,6 +1,6 @@
 package com.orderflow.ecommerce.exceptions;
 
-import com.orderflow.ecommerce.controllers.exceptions.FieldMessage;
+import com.orderflow.ecommerce.dtos.FieldMessage;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -14,9 +14,5 @@ public class DuplicateResourceValidationException extends RuntimeException {
     public DuplicateResourceValidationException(List<FieldMessage> errors, String message) {
         super(message);
         this.errors.addAll(errors);
-    }
-
-    public void addError(String fieldName, String message) {
-        errors.add(new FieldMessage(fieldName, message));
     }
 }
