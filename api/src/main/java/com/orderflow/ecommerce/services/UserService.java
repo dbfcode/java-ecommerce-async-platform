@@ -1,11 +1,12 @@
 package com.orderflow.ecommerce.services;
 
-import com.orderflow.ecommerce.controllers.exceptions.FieldMessage;
-import com.orderflow.ecommerce.dtos.UserDto;
+import com.orderflow.ecommerce.dtos.FieldMessage;
+import com.orderflow.ecommerce.dtos.UserRequest;
+import com.orderflow.ecommerce.dtos.UserResponse;
 import com.orderflow.ecommerce.entities.User;
 import com.orderflow.ecommerce.exceptions.DuplicateResourceValidationException;
+import com.orderflow.ecommerce.mappers.UserMapper;
 import com.orderflow.ecommerce.repositories.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -22,40 +23,61 @@ public class UserService {
 
     @Autowired
     private UserRepository repository;
+
+    @Autowired
+    private UserMapper userMapper;
+
     @Transactional(readOnly = true)
-    public UserDto findById(Long id) {
-        return new UserDto(repository.findById(id).orElseThrow(() -> new NoSuchElementException("User not found")));
+    public UserResponse findById(Long id) {
+        return new UserResponse(repository.findById(id).orElseThrow(() -> new NoSuchElementException("User not found")));
     }
 
     @Transactional(readOnly = true)
-    public UserDto findByEmail(String email) {
-        return new UserDto(repository.findByEmailIgnoreCase(email).orElseThrow(() -> new NoSuchElementException("User not found")));
+    public UserResponse findByEmail(String email) {
+        return new UserResponse(repository.findByEmailIgnoreCase(email).orElseThrow(() -> new NoSuchElementException("User not found")));
     }
 
     @Transactional(readOnly = true)
-    public Page<UserDto> findAllPaged(Pageable pageable) {
-        return repository.findAll(pageable).map(UserDto::new);
+    public Page<UserResponse> findAllPaged(Pageable pageable) {
+        return repository.findAll(pageable).map(UserResponse::new);
     }
 
     @Transactional
-    public UserDto insert(UserDto dto) {
-        return new UserDto(saveEntity(null, dto));
+    public UserResponse insert(UserRequest request) {
+        validateUser(null, request.email(), request.taxId());
+        User entity = userMapper.toEntity(request);
+        return userMapper.toResponse(repository.save(entity));
     }
 
     @Transactional
-    public UserDto update(Long id, UserDto dto) {
+    public UserResponse update(Long id, UserRequest request) {
+        User entity = repository.findById(id).orElseThrow(() -> new NoSuchElementException("User not found"));
+        validateUser(id, request.email(), request.taxId());
+
+        entity.setName(request.name());
+        entity.setEmail(request.email());
+        entity.setPassword(request.password());
+        entity.setTaxId(request.taxId());
+        entity.setStateRegistration(request.stateRegistration());
+        entity.setPhone(request.phone());
+        entity.setBirthDate(request.birthDate());
+        entity.setTaxpayer(request.taxpayer());
+        entity.setGoogleId(request.googleId());
+        entity.setStreet(request.street());
+        entity.setComplement(request.complement());
+        entity.setNumber(request.number());
+        entity.setNeighborhood(request.neighborhood());
+        entity.setCity(request.city());
+        entity.setCountry(request.country());
+        entity.setState(request.state());
+        entity.setZipCode(request.zipCode());
+
+        return userMapper.toResponse(repository.save(entity));
+    }
+
+    @Transactional
+    public void delete(Long id) {
         try {
-            return new UserDto(saveEntity(id, dto));
-        }
-        catch (EntityNotFoundException e) {
-            throw new NoSuchElementException("Id not found " + id);
-        }
-    }
-
-    @Transactional
-    public void delete(Long id, boolean verify) {
-        try {
-            if (verify) repository.findById(id).orElseThrow(() -> new NoSuchElementException("User not found"));
             repository.deleteById(id);
         }
         catch (DataIntegrityViolationException e) {
@@ -63,61 +85,19 @@ public class UserService {
         }
     }
 
-    private User saveEntity(Long id, UserDto dto) {
-        User entity = new User();
-        if(id != null){ // if updating
-            entity = repository.getReferenceById(id);
-            validate(id, dto.email(), dto.taxId(), "Email já cadastrado para outro usuário!", "CPF/CNPJ já cadastrado para outro usuário!");
-        } else {
-            validate(null, dto.email(), dto.taxId(), "Email já cadastrado!", "CPF/CNPJ já cadastrado!");
-        }
+    private void validateUser(Long id, String email, String taxId) {
 
-        entity.setName(dto.name());
-        entity.setEmail(dto.email());
-        entity.setPassword(dto.password());
-        entity.setTaxId(dto.taxId());
-        entity.setStateRegistration(dto.stateRegistration());
-        entity.setPhone(dto.phone());
-        entity.setBirthDate(dto.birthDate());
-        entity.setTaxpayer(dto.taxpayer());
-        entity.setGoogleId(dto.googleId());
-        entity.setStreet(dto.street());
-        entity.setComplement(dto.complement());
-        entity.setNumber(dto.number());
-        entity.setNeighborhood(dto.neighborhood());
-        entity.setCity(dto.city());
-        entity.setCountry(dto.country());
-        entity.setState(dto.state());
-        entity.setZipCode(dto.zipCode());
-
-        return repository.save(entity);
-    }
-
-    private void validate(Long id, String email, String taxId, String emailMessage, String taxIdMessage) {
         List<FieldMessage> errors = new ArrayList<>();
-        int ok = 0;
+
         if(id != null){
-            if (repository.existsByEmailAndIdNot(email, id)) {
-                ok = 1;
-                errors.add(new FieldMessage("email", "Email já cadastrado para outro usuário!"));
-            }
-            if (repository.existsByTaxIdAndIdNot(taxId, id)) {
-                ok = 1;
-                errors.add(new FieldMessage("taxId", "CPF/CNPJ já cadastrado para outro usuário!"));
-            }
+            if (repository.existsByEmailAndIdNot(email, id)) errors.add(new FieldMessage("email", "Email já cadastrado para outro usuário!"));
+            if (repository.existsByTaxIdAndIdNot(taxId, id)) errors.add(new FieldMessage("taxId", "CPF/CNPJ já cadastrado para outro usuário!"));
         } else {
-            if (repository.existsByEmail(email)) {
-                ok = 1;
-                errors.add(new FieldMessage("email", "Email já cadastrado!"));
-            }
-            if (repository.existsByTaxId(taxId)) {
-                ok = 1;
-                errors.add(new FieldMessage("taxId", "CPF/CNPJ já cadastrado!"));
-            }
+            if (repository.existsByEmail(email)) errors.add(new FieldMessage("email", "Email já cadastrado!"));
+            if (repository.existsByTaxId(taxId)) errors.add(new FieldMessage("taxId", "CPF/CNPJ já cadastrado!"));
         }
 
-        if (ok == 1)
-            throw new DuplicateResourceValidationException(errors, "Duplicated information!");
+        if (!errors.isEmpty()) throw new DuplicateResourceValidationException(errors, "Duplicated information!");
 
     }
 }

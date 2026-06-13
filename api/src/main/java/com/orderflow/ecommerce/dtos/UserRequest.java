@@ -8,8 +8,7 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 
-public record UserDto(
-        Long id,
+public record UserRequest(
         @NotBlank(message = "Campo requerido")
         String name,
         @NotBlank(message = "Campo requerido")
@@ -17,7 +16,7 @@ public record UserDto(
         String email,
         @NotBlank(message = "Campo requerido")
         @Pattern(
-                regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&.]).{8,}$",
+                regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&._#]).{8,}$",
                 message = "A senha deve conter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais"
         )
         String password,
@@ -44,8 +43,8 @@ public record UserDto(
         @Size(max = 10, message = "Máximo 10 caracteres")
         String zipCode
 ) {
-    public UserDto(User entity) {
-        this(entity.getId(), entity.getName(), entity.getEmail(), entity.getPassword(), entity.getTaxId(), entity.getStateRegistration(), entity.getPhone(), entity.getBirthDate(), entity.getTaxpayer(), entity.getGoogleId(), entity.getStreet(), entity.getComplement(), entity.getNumber(), entity.getNeighborhood(), entity.getCity(), entity.getCountry(), entity.getState(), entity.getZipCode());
+    public UserRequest(User entity) {
+        this(entity.getName(), entity.getEmail(), entity.getPassword(), entity.getTaxId(), entity.getStateRegistration(), entity.getPhone(), entity.getBirthDate(), entity.getTaxpayer(), entity.getGoogleId(), entity.getStreet(), entity.getComplement(), entity.getNumber(), entity.getNeighborhood(), entity.getCity(), entity.getCountry(), entity.getState(), entity.getZipCode());
     }
 }
 

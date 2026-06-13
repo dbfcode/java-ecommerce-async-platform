@@ -16,44 +16,21 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @Column(nullable = false)
     private String name;
     @Column(nullable = false, unique = true)
     private String email;
     private String password;
-
-
-    // Customer information for Invoices
-    /**
-     * CPF or CNPJ
-     */
     @Column(name = "tax_id", nullable = false, unique = true, length = 20)
     private String taxId;
-
-    /**
-     * State registration (IE)
-     */
     @Column(length = 30)
     private String stateRegistration;
-
     private String phone;
     private LocalDate birthDate;
-
-    /**
-     * Used in Invoices (NF-e)
-     */
     private Boolean taxpayer;
-
-    /**
-     * Google API
-     */
     @Column(unique = true)
     private String googleId;
 
-    /**
-     * private Address address;
-     */
     @Column(length = 40)
     private String street;
     @Column(length = 40)
