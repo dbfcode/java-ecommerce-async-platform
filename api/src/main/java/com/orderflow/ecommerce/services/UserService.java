@@ -29,17 +29,17 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserResponse findById(Long id) {
-        return new UserResponse(repository.findById(id).orElseThrow(() -> new NoSuchElementException("User not found")));
+        return userMapper.toResponse(repository.findById(id).orElseThrow(() -> new NoSuchElementException("User not found")));
     }
 
     @Transactional(readOnly = true)
     public UserResponse findByEmail(String email) {
-        return new UserResponse(repository.findByEmailIgnoreCase(email).orElseThrow(() -> new NoSuchElementException("User not found")));
+        return userMapper.toResponse(repository.findByEmailIgnoreCase(email).orElseThrow(() -> new NoSuchElementException("User not found")));
     }
 
     @Transactional(readOnly = true)
     public Page<UserResponse> findAllPaged(Pageable pageable) {
-        return repository.findAll(pageable).map(UserResponse::new);
+        return repository.findAll(pageable).map(userMapper::toResponse);
     }
 
     @Transactional

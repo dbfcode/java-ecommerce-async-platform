@@ -1,6 +1,5 @@
 package com.orderflow.ecommerce.dtos;
 
-import com.orderflow.ecommerce.entities.User;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -42,10 +41,6 @@ public record UserRequest(
         String state,
         @Size(max = 10, message = "Máximo 10 caracteres")
         String zipCode
-) {
-    public UserRequest(User entity) {
-        this(entity.getName(), entity.getEmail(), entity.getPassword(), entity.getTaxId(), entity.getStateRegistration(), entity.getPhone(), entity.getBirthDate(), entity.getTaxpayer(), entity.getGoogleId(), entity.getStreet(), entity.getComplement(), entity.getNumber(), entity.getNeighborhood(), entity.getCity(), entity.getCountry(), entity.getState(), entity.getZipCode());
-    }
-}
+) {}
 
 
