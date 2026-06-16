@@ -1,9 +1,11 @@
 package com.orderflow.ecommerce.services;
 
 import com.orderflow.ecommerce.auxiliar.Factory;
-import com.orderflow.ecommerce.dtos.UserDto;
+import com.orderflow.ecommerce.dtos.UserRequest;
+import com.orderflow.ecommerce.dtos.UserResponse;
 import com.orderflow.ecommerce.entities.User;
 import com.orderflow.ecommerce.exceptions.DuplicateResourceValidationException;
+import com.orderflow.ecommerce.mappers.UserMapper;
 import com.orderflow.ecommerce.repositories.UserRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -32,23 +35,29 @@ public class UserServiceTest {
     @Mock
     private UserRepository repository;
 
+    @Mock
+    private UserMapper userMapper;
+
     private Long existingId, nonExistingId, dependentId;
-    private String existingUserEmail, nonExistingUserEmail, existingTaxId, nonExistingTaxId;
+    private String existingUserEmail, nonExistingUserEmail, existingTaxId;
     private User user;
-    private UserDto userDto;
+    private UserResponse userResponse;
+    private UserRequest userRequest;
     private PageImpl<User> page;
 
     @BeforeEach
     void setUp() throws Exception {
         user = Factory.createUser();
+        userResponse = Factory.createUserResponse();
+        userRequest = Factory.createUserRequest();
+
         existingId = user.getId();
         nonExistingId = 2L;
         dependentId = 3L;
         existingUserEmail = user.getEmail();
-        nonExistingUserEmail = "user@gmail.com";
+        nonExistingUserEmail = "newuser@gmail.com";
         existingTaxId = user.getTaxId();
-        nonExistingTaxId = "99999999999";
-        userDto = Factory.createUserDto();
+
         page = new PageImpl<>(List.of(user));
 
         Mockito.when(repository.findByEmailIgnoreCase(existingUserEmail)).thenReturn(Optional.of(user));
@@ -76,21 +85,23 @@ public class UserServiceTest {
         Mockito.when(repository.getReferenceById(existingId)).thenReturn(user);
 
         Mockito.when(repository.getReferenceById(nonExistingId)).thenThrow(NoSuchElementException.class);
+
+        Mockito.when(userMapper.toResponse(ArgumentMatchers.any(User.class))).thenReturn(userResponse);
+        Mockito.when(userMapper.toEntity(ArgumentMatchers.any(UserRequest.class))).thenReturn(user);
     }
 
-    //#region find
 
     @Test
     public void findAllPagedShouldReturnPage() {
         Pageable pageable = PageRequest.of(0, 12);
-        Page<UserDto> result = service.findAllPaged(pageable);
+        Page<UserResponse> result = service.findAllPaged(pageable);
         Assertions.assertNotNull(result);
         Mockito.verify(repository, times(1)).findAll(pageable);
     }
 
     @Test
-    public void findByIdShouldReturnUserDtoWhenIdExists() {
-        UserDto result = service.findById(existingId);
+    public void findByIdShouldReturnUserResponseWhenIdExists() {
+        UserResponse result = service.findById(existingId);
         Assertions.assertNotNull(result);
     }
 
@@ -103,8 +114,8 @@ public class UserServiceTest {
     }
 
     @Test
-    public void findByEmailShouldReturnUserDtoWhenValidEmail() {
-        UserDto result = service.findByEmail(existingUserEmail);
+    public void findByEmailShouldReturnUserResponseWhenEmailIsValid() {
+        UserResponse result = service.findByEmail(existingUserEmail);
         Assertions.assertNotNull(result);
     }
 
@@ -116,12 +127,9 @@ public class UserServiceTest {
         Mockito.verify(repository).findByEmailIgnoreCase(nonExistingUserEmail);
     }
 
-    //#endregion
-
-    //#region insert
     @Test
-    void insertShouldSaveWhenNoDuplicates() {
-        UserDto result = service.insert(userDto);
+    void insertShouldSaveWhenNotDuplicated() {
+        UserResponse result = service.insert(userRequest);
 
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         Mockito.verify(repository).save(captor.capture());
@@ -134,30 +142,28 @@ public class UserServiceTest {
     }
 
     @Test
-    void insertShouldThrowDuplicateResourceExceptionWhenEmailDuplicate() {
+    void insertShouldThrowDuplicateResourceExceptionWhenEmailDuplicated() {
 
         Mockito.when(repository.existsByEmail(existingUserEmail)).thenReturn(true);
 
-        Assertions.assertThrows(DuplicateResourceValidationException.class, () -> service.insert(userDto));
+        Assertions.assertThrows(DuplicateResourceValidationException.class, () -> service.insert(userRequest));
 
         Mockito.verify(repository, times(0)).save(ArgumentMatchers.any());
     }
 
     @Test
-    void insertShouldThrowDuplicateResourceExceptionWhenTaxIdDuplicate() {
+    void insertShouldThrowDuplicateResourceExceptionWhenTaxIdDuplicated() {
         Mockito.when(repository.existsByTaxId(existingTaxId)).thenReturn(true);
 
-        Assertions.assertThrows(DuplicateResourceValidationException.class, () -> service.insert(userDto));
+        Assertions.assertThrows(DuplicateResourceValidationException.class, () -> service.insert(userRequest));
 
         Mockito.verify(repository, times(0)).save(ArgumentMatchers.any());
     }
 
-    //#endregion
-
-    //#region update
     @Test
-    void updateShouldReturnUserDTOWhenIdExistsAndNoDuplicates() {
-        UserDto result = service.update(existingId, userDto);
+    void updateShouldReturnUserResponseWhenIdExistsAndNotDuplicated() {
+        UserResponse result = service.update(existingId, userRequest);
+
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         Mockito.verify(repository).save(captor.capture());
         User saved = captor.getValue();
@@ -168,30 +174,20 @@ public class UserServiceTest {
 
     @Test
     void updateShouldThrowDuplicateResourceExceptionWhenEmailUsedByAnother() {
-
-        UserDto dto = new UserDto(existingId, "Bob New", "someoneelse@example.com", "pw",
-                "11111111111", null, null, null, null, null,
-                null, null, null, null, null, null, null, null);
-
-        Mockito.when(repository.existsByEmailAndIdNot("someoneelse@example.com", existingId)).thenReturn(true);
-
-        Assertions.assertThrows(DuplicateResourceValidationException.class, () -> service.update(existingId, dto));
-
+        UserRequest userRequest = createUserRequestForUpdate();
+        Mockito.when(repository.existsByEmailAndIdNot(existingUserEmail, existingId)).thenReturn(true);
+        Assertions.assertThrows(DuplicateResourceValidationException.class, () -> service.update(existingId, userRequest));
         Mockito.verify(repository, times(0)).save(ArgumentMatchers.any());
     }
 
     @Test
     void updateShouldThrowDuplicateResourceExceptionWhenTaxIdEUsedByAnother() {
-
-        UserDto dto = new UserDto(existingId, "Bob New", "someoneelse@example.com", "pw",
-                "11111111111", null, null, null, null, null,
-                null, null, null, null, null, null, null, null);
-
+        UserRequest userRequest = createUserRequestForUpdate();
         Mockito.when(repository.getReferenceById(existingId)).thenReturn(user);
-        Mockito.when(repository.existsByEmailAndIdNot("bob@gmail.com", existingId)).thenReturn(false);
-        Mockito.when(repository.existsByTaxIdAndIdNot("11111111111", existingId)).thenReturn(true);
+        Mockito.when(repository.existsByEmailAndIdNot(existingUserEmail, existingId)).thenReturn(false);
+        Mockito.when(repository.existsByTaxIdAndIdNot(existingTaxId, existingId)).thenReturn(true);
 
-        Assertions.assertThrows(DuplicateResourceValidationException.class, () -> service.update(existingId, dto));
+        Assertions.assertThrows(DuplicateResourceValidationException.class, () -> service.update(existingId, userRequest));
 
         Mockito.verify(repository, times(0)).save(ArgumentMatchers.any());
     }
@@ -199,42 +195,53 @@ public class UserServiceTest {
     @Test
     public void updateShouldThrowNoSuchElementExceptionWhenIdDoesNotExist() {
         Assertions.assertThrows(NoSuchElementException.class, () -> {
-            service.update(nonExistingId, userDto);
+            service.update(nonExistingId, userRequest);
         });
     }
-//#endregion
 
-    //#region delete
     @Test
     public void deleteShouldThrowDataIntegrityViolationExceptionWhenDependentId() {
-
         Assertions.assertThrows(DataIntegrityViolationException.class, () -> {
-            service.delete(dependentId, true);
+            service.delete(dependentId);
         });
     }
 
     @Test
-    public void deleteShouldThrowResourceNotFoundExceptionWhenIdDoesNotExistAndVerifyIsTrue() {
-        Assertions.assertThrows(NoSuchElementException.class, () -> {
-            service.delete(nonExistingId, true);
-        });
-    }
-
-    @Test
-    public void deleteShouldDoNothingWhenIdDoesNotExistAndVerifyIsFalse() {
+    public void deleteShouldDoNothingWhenIdDoesNotExist() {
         Mockito.doNothing().when(repository).deleteById(nonExistingId);
         Assertions.assertDoesNotThrow(() -> {
-            service.delete(nonExistingId, false);
+            service.delete(nonExistingId);
         });
     }
 
     @Test
     public void deleteShouldDoNothingWhenIdExists() {
         Assertions.assertDoesNotThrow(() -> {
-            service.delete(existingId, true);
+            service.delete(existingId);
         });
         Mockito.verify(repository, times(1)).deleteById(existingId);
     }
-    //#endregion
 
+
+    private UserRequest createUserRequestForUpdate() {
+        return new UserRequest(
+                "Robert",
+                "bob@gmail.com",
+                "Shh#secret0",
+                "12345678900",
+                "098765432",
+                "11999999999",
+                LocalDate.of(2000, 1, 20),
+                false,
+                "google-id-000",
+                "Rua A",
+                "Casa",
+                "123",
+                "Bairro",
+                "Cidade",
+                "País",
+                "SP",
+                "10000-000"
+        );
+    }
 }

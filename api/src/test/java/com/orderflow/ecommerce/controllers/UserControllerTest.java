@@ -2,7 +2,8 @@ package com.orderflow.ecommerce.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderflow.ecommerce.auxiliar.Factory;
-import com.orderflow.ecommerce.dtos.UserDto;
+import com.orderflow.ecommerce.dtos.UserRequest;
+import com.orderflow.ecommerce.dtos.UserResponse;
 import com.orderflow.ecommerce.services.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,49 +32,51 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(value = UserController.class, excludeAutoConfiguration = {SecurityAutoConfiguration.class})
+@WebMvcTest(value = UserController.class, excludeAutoConfiguration = { SecurityAutoConfiguration.class })
 public class UserControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
     @MockBean
     private UserService service;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     private long existingId, nonExistingId, dependentId;
     private String existingEmail, nonExistingEmail;
-    private UserDto userDto;
-    private PageImpl<UserDto> page;
+    private UserRequest userRequest;
+    private UserResponse userResponse;
+    private PageImpl<UserResponse> page;
 
     @BeforeEach
     void setUp() throws Exception {
-        userDto = Factory.createUserDto();
-        existingId = userDto.id();
+        userRequest = Factory.createUserRequest();
+        userResponse = Factory.createUserResponse();
+        existingId = 1L;
         nonExistingId = 2L;
-        existingEmail = userDto.email();
+        existingEmail = userRequest.email();
         nonExistingEmail = "inexistent@mail.com";
 
-        page = new PageImpl<>(List.of(userDto));
+        page = new PageImpl<>(List.of(userResponse));
 
         when(service.findAllPaged(any())).thenReturn(page);
 
-        when(service.findById(existingId)).thenReturn(userDto);
+        when(service.findById(existingId)).thenReturn(userResponse);
         when(service.findById(nonExistingId)).thenThrow(NoSuchElementException.class);
 
-        when(service.findByEmail(existingEmail)).thenReturn(userDto);
+        when(service.findByEmail(existingEmail)).thenReturn(userResponse);
         when(service.findByEmail(nonExistingEmail)).thenThrow(NoSuchElementException.class);
 
-        when(service.insert(any())).thenReturn(userDto);
+        when(service.insert(any())).thenReturn(userResponse);
 
-        when(service.update(eq(existingId), any())).thenReturn(userDto);
+        when(service.update(eq(existingId), any())).thenReturn(userResponse);
         when(service.update(eq(nonExistingId), any())).thenThrow(NoSuchElementException.class);
 
-        doNothing().when(service).delete(existingId, false);
-        doThrow(NoSuchElementException.class).when(service).delete(nonExistingId, true);
-        doThrow(DataIntegrityViolationException.class).when(service).delete(dependentId, false);
+        doNothing().when(service).delete(existingId);
+        doThrow(NoSuchElementException.class).when(service).delete(nonExistingId);
+        doThrow(DataIntegrityViolationException.class).when(service).delete(dependentId);
     }
 
     @Test
@@ -88,6 +91,23 @@ public class UserControllerTest {
 
         result.andExpect(status().isOk());
         result.andExpect(jsonPath("$.id").exists());
+        result.andExpect(jsonPath("$.name").exists());
+        result.andExpect(jsonPath("$.email").exists());
+        result.andExpect(jsonPath("$.password").exists());
+        result.andExpect(jsonPath("$.taxId").exists());
+        result.andExpect(jsonPath("$.stateRegistration").exists());
+        result.andExpect(jsonPath("$.phone").exists());
+        result.andExpect(jsonPath("$.birthDate").exists());
+        result.andExpect(jsonPath("$.taxpayer").exists());
+        result.andExpect(jsonPath("$.googleId").exists());
+        result.andExpect(jsonPath("$.street").exists());
+        result.andExpect(jsonPath("$.complement").exists());
+        result.andExpect(jsonPath("$.number").exists());
+        result.andExpect(jsonPath("$.neighborhood").exists());
+        result.andExpect(jsonPath("$.city").exists());
+        result.andExpect(jsonPath("$.country").exists());
+        result.andExpect(jsonPath("$.state").exists());
+        result.andExpect(jsonPath("$.zipCode").exists());
     }
 
     @Test
@@ -104,6 +124,23 @@ public class UserControllerTest {
 
         result.andExpect(status().isOk());
         result.andExpect(jsonPath("$.id").exists());
+        result.andExpect(jsonPath("$.name").exists());
+        result.andExpect(jsonPath("$.email").exists());
+        result.andExpect(jsonPath("$.password").exists());
+        result.andExpect(jsonPath("$.taxId").exists());
+        result.andExpect(jsonPath("$.stateRegistration").exists());
+        result.andExpect(jsonPath("$.phone").exists());
+        result.andExpect(jsonPath("$.birthDate").exists());
+        result.andExpect(jsonPath("$.taxpayer").exists());
+        result.andExpect(jsonPath("$.googleId").exists());
+        result.andExpect(jsonPath("$.street").exists());
+        result.andExpect(jsonPath("$.complement").exists());
+        result.andExpect(jsonPath("$.number").exists());
+        result.andExpect(jsonPath("$.neighborhood").exists());
+        result.andExpect(jsonPath("$.city").exists());
+        result.andExpect(jsonPath("$.country").exists());
+        result.andExpect(jsonPath("$.state").exists());
+        result.andExpect(jsonPath("$.zipCode").exists());
     }
 
     @Test
@@ -113,10 +150,9 @@ public class UserControllerTest {
         result.andExpect(status().isNotFound());
     }
 
-
     @Test
-    public void updateShouldReturnUserDTOWhenIdExists() throws Exception {
-        String jsonBody = objectMapper.writeValueAsString(userDto);
+    public void updateShouldReturnUserResponseWhenIdExists() throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(userRequest);
         ResultActions result = mockMvc.perform(put("/users/{id}", existingId)
                 .content(jsonBody)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -125,12 +161,28 @@ public class UserControllerTest {
         result.andExpect(status().isOk());
         result.andExpect(jsonPath("$.id").exists());
         result.andExpect(jsonPath("$.name").exists());
+        result.andExpect(jsonPath("$.email").exists());
+        result.andExpect(jsonPath("$.password").exists());
+        result.andExpect(jsonPath("$.taxId").exists());
+        result.andExpect(jsonPath("$.stateRegistration").exists());
+        result.andExpect(jsonPath("$.phone").exists());
+        result.andExpect(jsonPath("$.birthDate").exists());
+        result.andExpect(jsonPath("$.taxpayer").exists());
+        result.andExpect(jsonPath("$.googleId").exists());
+        result.andExpect(jsonPath("$.street").exists());
+        result.andExpect(jsonPath("$.complement").exists());
+        result.andExpect(jsonPath("$.number").exists());
+        result.andExpect(jsonPath("$.neighborhood").exists());
+        result.andExpect(jsonPath("$.city").exists());
+        result.andExpect(jsonPath("$.country").exists());
+        result.andExpect(jsonPath("$.state").exists());
+        result.andExpect(jsonPath("$.zipCode").exists());
 
     }
 
     @Test
     public void updateShouldThrowNotFoundWhenIdDoesNotExist() throws Exception {
-        String jsonBody = objectMapper.writeValueAsString(userDto);
+        String jsonBody = objectMapper.writeValueAsString(userRequest);
         ResultActions result = mockMvc.perform(put("/users/{id}", nonExistingId)
                 .content(jsonBody)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -141,7 +193,7 @@ public class UserControllerTest {
 
     @Test
     public void insertShouldReturnCreatedAndUserDTO() throws Exception {
-        String jsonBody = objectMapper.writeValueAsString(userDto);
+        String jsonBody = objectMapper.writeValueAsString(userRequest);
         ResultActions result = mockMvc.perform(post("/users")
                 .content(jsonBody)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -150,17 +202,29 @@ public class UserControllerTest {
         result.andExpect(status().isCreated());
         result.andExpect(jsonPath("$.id").exists());
         result.andExpect(jsonPath("$.name").exists());
+        result.andExpect(jsonPath("$.email").exists());
+        result.andExpect(jsonPath("$.password").exists());
+        result.andExpect(jsonPath("$.taxId").exists());
+        result.andExpect(jsonPath("$.stateRegistration").exists());
+        result.andExpect(jsonPath("$.phone").exists());
+        result.andExpect(jsonPath("$.birthDate").exists());
+        result.andExpect(jsonPath("$.taxpayer").exists());
+        result.andExpect(jsonPath("$.googleId").exists());
+        result.andExpect(jsonPath("$.street").exists());
+        result.andExpect(jsonPath("$.complement").exists());
+        result.andExpect(jsonPath("$.number").exists());
+        result.andExpect(jsonPath("$.neighborhood").exists());
+        result.andExpect(jsonPath("$.city").exists());
+        result.andExpect(jsonPath("$.country").exists());
+        result.andExpect(jsonPath("$.state").exists());
+        result.andExpect(jsonPath("$.zipCode").exists());
 
     }
 
     @Test
     public void deleteShouldReturnNoContentWhereIdExists() throws Exception {
-        mockMvc.perform(delete("/users/{id}", existingId).accept(MediaType.APPLICATION_JSON)).andExpect(status().isNoContent());
-    }
-
-    @Test
-    public void deleteShouldReturnNotFoundWhereIdDoesNotExist() throws Exception {
-        mockMvc.perform(delete("/users/{id}", nonExistingId).accept(MediaType.APPLICATION_JSON)).andExpect(status().isNoContent());
+        mockMvc.perform(delete("/users/{id}", existingId).accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNoContent());
     }
 
 }
