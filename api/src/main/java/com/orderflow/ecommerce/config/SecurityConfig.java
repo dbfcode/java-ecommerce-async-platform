@@ -45,7 +45,6 @@ public class SecurityConfig {
                         .requestMatchers("/products/**", "/categories/**").authenticated()
                         .anyRequest().authenticated()
                 );
-
         return http.build();
     }
 
