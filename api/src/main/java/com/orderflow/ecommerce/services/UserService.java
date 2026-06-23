@@ -29,12 +29,12 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserResponse findById(Long id) {
-        return userMapper.toResponse(repository.findById(id).orElseThrow(() -> new NoSuchElementException("User not found")));
+        return userMapper.toResponse(findUserById(id));
     }
 
     @Transactional(readOnly = true)
     public UserResponse findByEmail(String email) {
-        return userMapper.toResponse(repository.findByEmailIgnoreCase(email).orElseThrow(() -> new NoSuchElementException("User not found")));
+        return userMapper.toResponse(repository.findByEmailIgnoreCase(email).orElseThrow(() -> new NoSuchElementException("Usuário não encontrado")));
     }
 
     @Transactional(readOnly = true)
@@ -51,7 +51,7 @@ public class UserService {
 
     @Transactional
     public UserResponse update(Long id, UserRequest request) {
-        User entity = repository.findById(id).orElseThrow(() -> new NoSuchElementException("User not found"));
+        User entity = findUserById(id);
         validateUser(id, request.email(), request.taxId());
 
         entity.setName(request.name());
@@ -78,10 +78,10 @@ public class UserService {
     @Transactional
     public void delete(Long id) {
         try {
-            repository.deleteById(id);
+            repository.delete(findUserById(id));
         }
         catch (DataIntegrityViolationException e) {
-            throw new DataIntegrityViolationException("Integrity violation");
+            throw new DataIntegrityViolationException("Integridade violada");
         }
     }
 
@@ -97,7 +97,11 @@ public class UserService {
             if (repository.existsByTaxId(taxId)) errors.add(new FieldMessage("taxId", "CPF/CNPJ já cadastrado!"));
         }
 
-        if (!errors.isEmpty()) throw new DuplicateResourceValidationException(errors, "Duplicated information!");
+        if (!errors.isEmpty()) throw new DuplicateResourceValidationException(errors, "Informação já existe para outro usuário");
 
+    }
+
+    private User findUserById(Long id) {
+        return repository.findById(id).orElseThrow(() -> new NoSuchElementException("Usuário não encontrado"));
     }
 }

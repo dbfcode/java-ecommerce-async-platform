@@ -125,6 +125,11 @@ public interface UserControllerDocs {
                             responseCode = "204",
                             description = "Usuário removido com sucesso",
                             content = @Content
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Usuário não encontrado",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
                     )
             }
     )
