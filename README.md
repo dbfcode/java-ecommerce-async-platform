@@ -243,19 +243,25 @@ sequenceDiagram
 
 ## REST API Endpoints
 
-| Method | Endpoint | Description | Request Body |
-|--------|----------|-------------|--------------|
-| `GET` | `/categories` | List all categories | — |
-| `GET` | `/categories/{id}` | Get category by ID | — |
-| `POST` | `/categories` | Create category | `{ "name": "..." }` |
-| `PUT` | `/categories/{id}` | Update category | `{ "name": "..." }` |
-| `DELETE` | `/categories/{id}` | Delete category | — |
-| `GET` | `/products` | List all products | — |
-| `GET` | `/products/{id}` | Get product by ID | — |
-| `POST` | `/products` | Create product | `{ "name", "description", "price", "stockQuantity", "category": {"id": n} }` |
-| `PUT` | `/products/{id}` | Update product | same as create |
-| `DELETE` | `/products/{id}` | Delete product | — |
-| `GET` | `/test/ping` | Health check | — |
+| Method | Endpoint                    | Description | Request Body |
+|--------|-----------------------------|-------------|--------------|
+| `GET` | `/categories`               | List all categories | — |
+| `GET` | `/categories/{id}`          | Get category by ID | — |
+| `POST` | `/categories`               | Create category | `{ "name": "..." }` |
+| `PUT` | `/categories/{id}`          | Update category | `{ "name": "..." }` |
+| `DELETE` | `/categories/{id}`          | Delete category | — |
+| `GET` | `/products`                 | List all products | — |
+| `GET` | `/products/{id}`            | Get product by ID | — |
+| `POST` | `/products`                 | Create product | `{ "name", "description", "price", "stockQuantity", "category": {"id": n} }` |
+| `PUT` | `/products/{id}`            | Update product | same as create |
+| `DELETE` | `/products/{id}`            | Delete product | — |
+| `GET` | `/users`                    | List all users | — |
+| `GET` | `/users/{id}`               | Get user by ID | — |
+| `GET` | `/users/search/by-email`    | Get user by email | — |
+| `POST` | `/users`                    | Create user | `{ "name", "email", "password", "taxId", "stateRegistration", "phone", "birthDate", "taxpayer", "googleId", "street", "complement", "number", "neighborhood", "city", "country", "state", "zipCode"}` |
+| `PUT` | `/users/{id}`               | Update user | `{ "name", "email", "password", "taxId", "stateRegistration", "phone", "birthDate", "taxpayer", "googleId", "street", "complement", "number", "neighborhood", "city", "country", "state", "zipCode"}` |
+| `DELETE` | `/users/{id}`               | Delete user | — |
+| `GET` | `/test/ping`                | Health check | — |
 | `GET` | `/test/publish-sample-order` | Publish test event to RabbitMQ | — |
 
 > 📖 **Interactive docs:** [Swagger UI](http://localhost:8080/swagger-ui/index.html) (after starting the API)
