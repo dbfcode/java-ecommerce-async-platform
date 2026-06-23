@@ -1,30 +1,32 @@
 package com.orderflow.ecommerce.exceptions;
 
+import com.orderflow.ecommerce.dtos.ValidationError;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import com.orderflow.ecommerce.dtos.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.Instant;
 import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
-        String errors = ex.getBindingResult().getFieldErrors()
-                .stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .collect(Collectors.joining(", "));
-
-        ErrorResponse err = new ErrorResponse(Instant.now(), HttpStatus.BAD_REQUEST.value(), errors, request.getRequestURI());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+    public ResponseEntity<ValidationError> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        ErrorResponse err = new ErrorResponse(Instant.now(), status.value(), "Erro de validação", request.getRequestURI());
+        ValidationError validationError = new ValidationError(err);
+        for (FieldError f : ex.getBindingResult().getFieldErrors()) {
+            validationError.addError(f.getField(), f.getDefaultMessage());
+        }
+        return ResponseEntity.status(status).body(validationError);
     }
 
     @ExceptionHandler(NoSuchElementException.class)
@@ -69,5 +71,24 @@ public class GlobalExceptionHandler {
             request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleIntegrityViolation(DataIntegrityViolationException ex, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        ErrorResponse err = new ErrorResponse(Instant.now(), status.value(), ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(status).body(err);
+    }
+
+    @ExceptionHandler(DuplicateResourceValidationException.class)
+    public ResponseEntity<ValidationError> handleDuplicateResource(DuplicateResourceValidationException ex, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        ErrorResponse err = new ErrorResponse(Instant.now(), status.value(), ex.getMessage(), request.getRequestURI());
+        ValidationError validationError = new ValidationError(err);
+        ex.getErrors().forEach(f -> {
+            validationError.addError(f.getFieldName(), f.getMessage());
+        });
+
+        return ResponseEntity.status(status).body(validationError);
     }
 }
