@@ -34,7 +34,7 @@ public class UserController implements UserControllerDocs {
     }
 
     @Override
-    @GetMapping(params = "email")
+    @GetMapping(value = "/search/by-email", params = "email")
     public ResponseEntity<UserResponse> findByEmail(@RequestParam String email) {
         return ResponseEntity.ok().body(service.findByEmail(email));
     }
