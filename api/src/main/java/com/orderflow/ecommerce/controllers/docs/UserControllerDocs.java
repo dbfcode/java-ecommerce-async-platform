@@ -44,10 +44,9 @@ public interface UserControllerDocs {
     ResponseEntity<UserResponse> findById(@PathVariable Long id);
 
     @Operation(
-            summary = "Lista todas os usuários",
+            summary = "Lista todos os usuários",
             description = "Retorna uma lista paginada de todos os usuários. Filtra por nome se o parâmetro 'name' for informado.",
             parameters = {
-                    @Parameter(name = "name", description = "Filtro opcional por nome do usuário", required = false, example = "Maria"),
                     @Parameter(name = "page", description = "Número da página (começa em 0)", example = "0"),
                     @Parameter(name = "size", description = "Quantidade de itens por página", example = "10"),
                     @Parameter(name = "sort", description = "Campo e direção de ordenação", example = "name,asc")
@@ -60,9 +59,10 @@ public interface UserControllerDocs {
                     )
             }
     )
-    ResponseEntity<Page<UserResponse>> findAll(Pageable pageable);
+    ResponseEntity<Page<UserResponse>> findAll(@Parameter(hidden = true) Pageable pageable);
 
     @Operation(
+            tags = "User",
             summary = "Obtém usuário por e-mail",
             description = "Retorna um usuário com base no e-mail fornecido.",
             parameters = {
@@ -80,7 +80,7 @@ public interface UserControllerDocs {
                             content = @Content(schema = @Schema(implementation = UserResponse.class))),
                     @ApiResponse(
                             responseCode = "404",
-                            description = "Usuário inexistente",
+                            description = "Usuário não encontrado",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
